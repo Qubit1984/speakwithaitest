@@ -92,8 +92,7 @@ export function BotMessage({
             },
           }}
         >
-          {text}
-          {}
+          {[text]}
         </MemoizedReactMarkdown>
       </div>
     </div>
