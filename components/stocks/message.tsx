@@ -36,8 +36,7 @@ export function BotMessage({
   className?: string;
 }) {
   const [text, isComplete] = useStreamableText(content);
-  if (isComplete) {
-    console.log(text);
+  if (isComplete && isComplete && typeof text === "string") {
     speakMessage(text);
   } //my code
   /* const {} = useChat({

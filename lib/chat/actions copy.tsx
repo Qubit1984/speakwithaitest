@@ -1,17 +1,6 @@
 import "server-only";
+
 import {
-  createAI,
-  getMutableAIState,
-  getAIState,
-  render,
-  createStreamableValue,
-} from "ai/rsc";
-import OpenAI from "openai";
-
-import { BotMessage } from "@/components/stocks";
-
-import { nanoid } from "@/lib/utils";
-/* import {
   createAI,
   createStreamableUI,
   getMutableAIState,
@@ -28,7 +17,7 @@ import {
   SystemMessage,
   Stock,
   Purchase,
-} from "@/components/stocks"; 
+} from "@/components/stocks";
 
 import { z } from "zod";
 import { EventsSkeleton } from "@/components/stocks/events-skeleton";
@@ -41,7 +30,7 @@ import {
   runAsyncFnWithoutBlocking,
   sleep,
   nanoid,
-} from "@/lib/utils";*/
+} from "@/lib/utils";
 import { saveChat } from "@/app/actions";
 import { SpinnerMessage, UserMessage } from "@/components/stocks/message";
 import { Chat } from "@/lib/types";
@@ -52,7 +41,7 @@ const openai = new OpenAI({
   baseURL: "http://jp.japanesegrammar.tokyo:3040/v1",
 });
 
-/* async function confirmPurchase(symbol: string, price: number, amount: number) {
+async function confirmPurchase(symbol: string, price: number, amount: number) {
   "use server";
 
   const aiState = getMutableAIState<typeof AI>();
@@ -132,7 +121,7 @@ const openai = new OpenAI({
     },
   };
 }
- */
+
 async function submitUserMessage(content: string) {
   "use server";
 
@@ -160,7 +149,21 @@ async function submitUserMessage(content: string) {
     messages: [
       {
         role: "system",
-        content: "You are a helpful friend.",
+        content: `\
+You are a stock trading conversation bot and you can help users buy stocks, step by step.
+You and the user can discuss stock prices and the user can adjust the amount of stocks they want to buy, or place an order, in the UI.
+
+Messages inside [] means that it's a UI element or a user event. For example:
+- "[Price of AAPL = 100]" means that an interface of the stock price of AAPL is shown to the user.
+- "[User has changed the amount of AAPL to 10]" means that the user has changed the amount of AAPL to 10 in the UI.
+
+If the user requests purchasing a stock, call \`show_stock_purchase_ui\` to show the purchase UI.
+If the user just wants the price, call \`show_stock_price\` to show the price.
+If you want to show trending stocks, call \`list_stocks\`.
+If you want to show events, call \`get_events\`.
+If the user wants to sell stock, or complete another impossible task, respond that you are a demo and cannot do that.
+
+Besides that, you can also chat with users and do some calculations if needed.`,
       },
       ...aiState.get().messages.map((message: any) => ({
         role: message.role,
@@ -194,7 +197,7 @@ async function submitUserMessage(content: string) {
       return textNode;
     },
     functions: {
-      /*     listStocks: {
+      listStocks: {
         description: "List three imaginary stocks that are trending.",
         parameters: z.object({
           stocks: z.array(
@@ -381,7 +384,7 @@ async function submitUserMessage(content: string) {
             </BotCard>
           );
         },
-      }, */
+      },
     },
   });
 
@@ -411,6 +414,7 @@ export type UIState = {
 export const AI = createAI<AIState, UIState>({
   actions: {
     submitUserMessage,
+    confirmPurchase,
   },
   initialUIState: [],
   initialAIState: { chatId: nanoid(), messages: [] },
@@ -465,7 +469,7 @@ export const getUIStateFromAIState = (aiState: Chat) => {
     .map((message, index) => ({
       id: `${aiState.chatId}-${index}`,
       display:
-        /*  message.role === "function" ? (
+        message.role === "function" ? (
           message.name === "listStocks" ? (
             <BotCard>
               <Stocks props={JSON.parse(message.content)} />
@@ -483,7 +487,7 @@ export const getUIStateFromAIState = (aiState: Chat) => {
               <Events props={JSON.parse(message.content)} />
             </BotCard>
           ) : null
-        ) :  */ message.role === "user" ? (
+        ) : message.role === "user" ? (
           <UserMessage>{message.content}</UserMessage>
         ) : (
           <BotMessage content={message.content} />
