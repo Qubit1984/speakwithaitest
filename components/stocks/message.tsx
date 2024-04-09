@@ -37,15 +37,7 @@ export function BotMessage({
   const [text, isComplete] = useStreamableText(content) as [string, boolean];
   if (isComplete && isComplete) {
     speakMessage(text);
-  } //my code
-  /* const {} = useChat({
-    onFinish(message) {
-      console.log(message);
-      speakMessage(text);
-    },
-  }); */
-  //console.log(text);
-
+  }
   return (
     <div className={cn("group relative flex items-start md:-ml-12", className)}>
       <div className="flex size-[24px] shrink-0 select-none items-center justify-center rounded-md border bg-primary text-primary-foreground shadow-sm">
