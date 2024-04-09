@@ -11,7 +11,6 @@ import { StreamableValue } from "ai/rsc";
 import { useStreamableText } from "@/lib/hooks/use-streamable-text";
 //my code
 import speakMessage from "@/lib/hooks/speak-message";
-import { useChat } from "ai/react";
 
 // Different types of message bubbles.
 
