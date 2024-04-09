@@ -27,5 +27,5 @@ export const useStreamableText = (
     })();
   }, [content]);
 
-  return [rawContent, isComplete.current as boolean];
+  return [rawContent as string, isComplete.current as boolean];
 };
