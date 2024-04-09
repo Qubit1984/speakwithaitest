@@ -25,40 +25,44 @@ export default function Microphone({ onVoiceChange }: MicrophoneProps) {
   const [micOpen, setMicOpen] = useState(false);
   const [microphone, setMicrophone] = useState<MediaRecorder | null>();
   const [userMedia, setUserMedia] = useState<MediaStream | null>();
-  const [caption, setCaption] = useState<string | null>();
+  //const [caption, setCaption] = useState<string | null>();
 
   const textRef = useRef<string[]>([]);
 
   const toggleMicrophone = useCallback(async () => {
     if (connection) {
-      setConnection(null);
-      setUserMedia(null);
-      setMicrophone(null);
+      connection.finish();
+
+      if (microphone) {
+        microphone.stop();
+      }
     } else {
       const userMedia = await navigator.mediaDevices.getUserMedia({
         audio: true,
       });
+      if (!microphone) {
+        const microphone = new MediaRecorder(userMedia);
+        microphone.start(500);
 
-      const microphone = new MediaRecorder(userMedia);
-      microphone.start(500);
+        microphone.onstart = () => {
+          setMicOpen(true);
+        };
 
-      microphone.onstart = () => {
-        setMicOpen(true);
-      };
+        microphone.onstop = () => {
+          setMicOpen(false);
+          setMicrophone(null);
+          console.log("microphone stopped");
+        };
 
-      microphone.onstop = () => {
-        setMicOpen(false);
-      };
+        microphone.ondataavailable = (e) => {
+          add(e.data);
+        };
 
-      microphone.ondataavailable = (e) => {
-        add(e.data);
-      };
-
-      setUserMedia(userMedia);
-      setMicrophone(microphone);
-
+        setUserMedia(userMedia);
+        setMicrophone(microphone);
+      }
       if (apiKey && "key" in apiKey) {
-        console.log("connecting to deepgram");
+        console.log("connecting on");
         const deepgram = createClient(apiKey?.key ?? "");
         const connection = deepgram.listen.live({
           model: "nova-2",
@@ -72,7 +76,7 @@ export default function Microphone({ onVoiceChange }: MicrophoneProps) {
         keepAlive = setInterval(() => {
           console.log("KeepAlive sent.");
           connection.keepAlive();
-        }, 5000); // Sending KeepAlive messages every 3 seconds
+        }, 4000); // Sending KeepAlive messages every 3 seconds
 
         connection.on(LiveTranscriptionEvents.Open, () => {
           console.log("connection established");
@@ -84,6 +88,8 @@ export default function Microphone({ onVoiceChange }: MicrophoneProps) {
           setListening(false);
           setApiKey(null);
           setConnection(null);
+          setMicrophone(null);
+          clearInterval(keepAlive);
         });
 
         connection.on(LiveTranscriptionEvents.Transcript, (data) => {
@@ -92,14 +98,13 @@ export default function Microphone({ onVoiceChange }: MicrophoneProps) {
           if (final && text) {
             textRef.current.push(text);
           }
-
-          const words = data.channel.alternatives[0].words;
+          /*     const words = data.channel.alternatives[0].words;
           const caption = words
             .map((word: any) => word.punctuated_word ?? word.word)
             .join(" ");
           if (caption !== "") {
             setCaption(caption);
-          }
+          } */
         });
         connection.on(LiveTranscriptionEvents.UtteranceEnd, () => {
           const sentence = textRef.current.join(" ");
@@ -127,7 +132,7 @@ export default function Microphone({ onVoiceChange }: MicrophoneProps) {
           console.error(e);
         });
     }
-  }, [apiKey]);
+  }, [apiKey, connection]);
   /* 
   useEffect(() => {
     if (apiKey && "key" in apiKey) {
@@ -189,7 +194,7 @@ export default function Microphone({ onVoiceChange }: MicrophoneProps) {
       if (size > 0 && !isProcessing) {
         setProcessing(true);
 
-        if (isListening) {
+        if (isListening && connection) {
           const blob = first;
           connection?.send(blob);
           remove();
@@ -218,7 +223,10 @@ export default function Microphone({ onVoiceChange }: MicrophoneProps) {
         // width="96"
         // height="96"
         className={
-          `cursor-pointer` + !!userMedia && !!microphone && micOpen
+          `cursor-pointer` + !!userMedia &&
+          !!microphone &&
+          micOpen &&
+          connection
             ? "fill-red-400 drop-shadow-glowRed"
             : "fill-gray-600"
         }
